@@ -21,7 +21,7 @@ signed main()
         int in=-1;
         for(int j=1;j<=n;j++)
         {
-            if(pivot[j]==-1) continue;
+            if(pivot[j]!=-1) continue;
             if(in!=-1 && bit[j][i]) bit[j]^=bit[in], g[j].push_back(in); 
             else if(bit[j][i]) in=j,pivot[j]=i, basis[i]=j;
         }
