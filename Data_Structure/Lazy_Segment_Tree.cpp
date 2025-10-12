@@ -1,78 +1,98 @@
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
 using namespace std;
-template<typename T>
-struct SegmentTree {
-#define lc (C << 1)
-#define rc (C << 1 | 1)
-#define M ((L+R)>>1)
-    struct data {
-        T sum;
-        data() :sum(0) {};
-    };
-    vector<data>st;
-    vector<bool>isLazy;
-    vector<T>lazy;
-    int N;
-    SegmentTree(int _N) :N(_N) {
-        st.resize(4 * N);
-        isLazy.resize(4 * N);
-        lazy.resize(4 * N);
-    }
-    void combine(data& cur, data& l, data& r) {
-        cur.sum = l.sum + r.sum;
-    }
-    void push(int C, int L, int R) {
-        if (!isLazy[C]) return;
-        if (L != R) {
-            isLazy[lc] = 1;
-            isLazy[rc] = 1;
-            lazy[lc] += lazy[C];
-            lazy[rc] += lazy[C];
-        }
-        st[C].sum = (R - L + 1) * lazy[C];
-        lazy[C] = 0;
-        isLazy[C] = false;
-    }
-    void build(int C, int L, int R) {
-        if (L == R) {
-            st[C].sum = 0;
-            return;
-        }
-        build(lc, L, M);
-        build(rc, M + 1, R);
-        combine(st[C], st[lc], st[rc]);
-    }
-    data query(int i, int j, int C, int L, int R) {
-        push(C, L, R);
-        if (j < L || i > R || L > R) return data(); //default val 0/INF
-        if (i <= L && R <= j) return st[C];
-        data ret;
-        data d1 = query(i, j, lc, L, M);
-        data d2 = query(i, j, rc, M + 1, R);
-        combine(ret, d1, d2);
-        return ret;
-    }
-    void update(int i, int j, T val, int C, int L, int R)
-    {
-        push(C, L, R);
-        if (j < L || i > R || L > R) return;
-        if (i <= L && R <= j) {
-            isLazy[C] = 1;
-            lazy[C] = val;
-            push(C, L, R);
-            return;
-        }
-        update(i, j, val, lc, L, M);
-        update(i, j, val, rc, M + 1, R);
-        combine(st[C], st[lc], st[rc]);
-    }
-    void update(int i, int j, T val) {
-        update(i, j, val, 1, 1, N);
-    }
-    T query(int i, int j) {
-        return query(i, j, 1, 1, N).sum;
-    }
+using ll = long long;
+
+struct Node {
+  ll a;
+  Node() : a(LLONG_MIN/4) {}
+  Node(ll _a) : a(_a) {}
+  friend Node merge(const Node &A, const Node &B) {
+    return Node(max(A.a, B.a));
+  }
 };
+
+struct SegmentTree {
+  int n;
+  int size;
+  vector<Node> t;
+  vector<ll> lazy;
+  vector<bool> isLazy;
+
+  SegmentTree(int _n) { init(_n); }
+
+  void init(int _n) {
+    n = _n;
+    size = 1;
+    while (size < max(1, n)) size <<= 1;
+    t.assign(2 * size, Node());
+    lazy.assign(2 * size, 0);
+    isLazy.assign(2 * size, 0);
+  }
+
+  void build(const vector<ll> &vals) {
+    for (int i = 1; i <= n; ++i) t[size + i - 1] = Node(vals[i]);
+    for (int i = n + 1; i <= size; ++i) t[size + i - 1] = Node();
+    for (int nd = size - 1; nd >= 1; --nd) pull(nd);
+  }
+
+  inline void pull(int nd) {
+    t[nd] = merge(t[nd << 1], t[nd << 1 | 1]);
+  }
+  inline void apply_node(int nd, int st, int en, ll val) {
+    t[nd].a += val;
+    lazy[nd] += val;
+    isLazy[nd] = 1;
+  }
+
+  inline void push(int nd, int st, int en) {
+    if (!isLazy[nd] || nd >= size) return;
+    int mid = (st + en) >> 1;
+    apply_node(nd << 1, st, mid, lazy[nd]);
+    apply_node(nd << 1 | 1, mid+1, en, lazy[nd]);
+    isLazy[nd] = 0;
+    lazy[nd] = 0;
+  }
+  void update(int l, int r, ll val) { update(1, 1, size, l, r, val); }
+  void update(int nd, int st, int en, int l, int r, ll val) {
+    if (l > en || r < st) return;
+    if (l <= st && en <= r) {
+      apply_node(nd, st, en, val);
+      return;
+    }
+    push(nd, st, en);
+    int mid = (st + en) >> 1;
+    update(nd << 1, st, mid, l, r, val);
+    update(nd << 1 | 1, mid + 1, en, l, r, val);
+    pull(nd);
+  }
+
+  Node query(int l, int r) { return query(1, 1, size, l, r); }
+  Node query(int nd, int st, int en, int l, int r) {
+    if (l > en || r < st) return Node();
+    if (l <= st && en <= r) return t[nd];
+    push(nd, st, en);
+    int mid = (st + en) >> 1;
+    Node L = query(nd << 1, st, mid, l, r);
+    Node R = query(nd << 1 | 1, mid + 1, en, l, r);
+    return merge(L, R);
+  }
+
+  void updatePoint(int p, ll v) { updatePoint(1, 1, size, p, v); }
+  void updatePoint(int nd, int st, int en, int p, ll v) {
+    if (st == en) {
+      t[nd] = Node(v);
+      lazy[nd] = 0;
+      isLazy[nd] = 0;
+      return;
+    }
+    push(nd, st, en);
+    int mid = (st + en) >> 1;
+    if (p <= mid) updatePoint(nd << 1, st, mid, p, v);
+    else updatePoint(nd << 1 | 1, mid + 1, en, p, v);
+    pull(nd);
+  }
+};
+
 int main()
 {
     

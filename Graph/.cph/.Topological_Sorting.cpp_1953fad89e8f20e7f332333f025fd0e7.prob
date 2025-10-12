@@ -1,0 +1,1 @@
+{"name":"Local: Topological_Sorting","url":"d:\\Programming\\Templates\\Graph\\Topological_Sorting.cpp","tests":[{"id":1760098006502,"input":"8 7\n1 2 \n1 3\n2 4\n3 4\n5 6\n6 7\n8 6","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"d:\\Programming\\Templates\\Graph\\Topological_Sorting.cpp","group":"local","local":true}
