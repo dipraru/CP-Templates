@@ -48,6 +48,7 @@ struct SegmentTree {
 
   inline void pull(int nd) {
     t[nd] = merge(t[nd << 1], t[nd << 1 | 1]);
+    if(isLazy[nd]) t[nd].a+=lazy[nd]*(endIdx[nd]-startIdx[nd]+1);
   }
 
   inline void apply_node(int nd, ll val) {
