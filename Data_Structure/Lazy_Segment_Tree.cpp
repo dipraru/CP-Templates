@@ -2,6 +2,15 @@
 using namespace std;
 using ll = long long;
 
+struct Node {
+  ll a;
+  Node() : a(LLONG_MIN/4) {}
+  Node(ll _a) : a(_a) {}
+  friend Node merge(const Node &A, const Node &B) {
+    return Node(max(A.a, B.a));
+  }
+};
+
 struct SegmentTree {
   int n;
   int size;
@@ -81,15 +90,6 @@ struct SegmentTree {
     if (p <= mid) updatePoint(nd << 1, st, mid, p, v);
     else updatePoint(nd << 1 | 1, mid + 1, en, p, v);
     pull(nd);
-  }
-};
-
-struct Node {
-  ll a;
-  Node() : a(LLONG_MIN/4) {}
-  Node(ll _a) : a(_a) {}
-  friend Node merge(const Node &A, const Node &B) {
-    return Node(max(A.a, B.a));
   }
 };
 
