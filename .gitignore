@@ -6,3 +6,8 @@
 *.exe
 *.txt
 *.prob
+*.bin
+
+# Ignore files with no extension (keep directories accessible)
+[^.]*
+!*/
