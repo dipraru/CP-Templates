@@ -46,7 +46,8 @@ void backward2(){
 //G[i] = (SUM(F[j]2)) where (i&j) = j and j <= i
 int main()
 {
-    fastio
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);cout.tie(0);
     int n;
     cin>>n;
     ll a[n];
