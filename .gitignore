@@ -1,0 +1,8 @@
+# Ignore competitive programming helper folders
+.cph/
+**/.cph/
+
+# Ignore generated binaries and artifacts
+*.exe
+*.txt
+*.prob
