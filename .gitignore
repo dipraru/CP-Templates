@@ -7,8 +7,3 @@
 *.txt
 *.prob
 *.bin
-
-# Ignore files with no extension (keep directories accessible)
-# NOTE: removed a previously broad rule that ignored most files ("[^.]*").
-# That pattern caused regular source files to be ignored (e.g. Graph/CentroidDecomposition.cpp).
-# Keep directory allowance, but do not ignore all non-dot-starting files.
