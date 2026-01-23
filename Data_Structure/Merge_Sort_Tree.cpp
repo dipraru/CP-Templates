@@ -9,8 +9,7 @@ class MergeSortTree {
 public:
     int n;
     vector<vector<T>> tree;
-
-    void build(int node, int st, int en)
+    void build(int node, int st, int en, vector<int> &arr)
     {
         if(st==en) {tree[node].push_back(arr[st]);return;}
         int mid=(st+en)/2;
@@ -34,11 +33,11 @@ public:
         n = int(A.size());
         if (n == 0) return;
         tree.resize(4 * n);
-        build(1,1,n);
+        build(1,0,n-1);
     }
     int query(int L, int R) {
         if (n == 0 || L > R || L < 1 || R > n) return 0;
-        return queryRec(1,1,n,L,R);
+        return query(1,0,n-1,L,R);
     }
 };
 
