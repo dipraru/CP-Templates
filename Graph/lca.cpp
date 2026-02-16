@@ -41,6 +41,12 @@ int lca(int x,int y)
     }
     return pp[x][0];
 }
+int kth_ancestor(int node, int k) {
+    for (int i = 0; i < 20 && node; ++i) {
+        if (k & (1 << i)) node = pp[node][i];
+    }
+    return node;
+}
 signed main()
 {
     fast
