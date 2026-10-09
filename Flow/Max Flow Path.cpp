@@ -1,3 +1,6 @@
+#include<bits/stdc++.h>
+using namespace std;
+const long long INF=1e12;
 struct MaxFlowpath
 {
     struct Edge

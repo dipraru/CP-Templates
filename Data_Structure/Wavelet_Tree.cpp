@@ -1,121 +1,165 @@
 #include <bits/stdc++.h>
 using namespace std;
-#define fast {ios_base::sync_with_stdio(false); cin.tie(0);}
-typedef long long ll;
-#define int long long
-#define float long double
-int cs;
+
+using ll = long long;
+struct Node
+{
+    int lo, hi, L, R, st;
+};
 struct WaveletTree
 {
-    int lo, hi;
-    WaveletTree *L = nullptr, *R = nullptr;
-    // b[i] = number of elements from prefix[0..i-1] that went to left child.
-    // b.size() == n+1 where b[0] = 0.
+    vector<ll> val;
+    vector<Node> t;
     vector<int> b;
     vector<ll> pref;
-    WaveletTree() = default;
-    WaveletTree(const vector<int> &arr, int x, int y) : lo(x), hi(y), L(nullptr), R(nullptr)
+    int n = 0, D = 0, root = -1;
+    int build(vector<int>& a, vector<int>& tmp, int L, int R, int lo, int hi)
     {
-        int n = (int)arr.size();
-        b.reserve(n + 1);
-        pref.reserve(n + 1);
-        b.push_back(0);
-        pref.push_back(0);
-        if (n == 0) return;
-        if (lo == hi)
+        int id = t.size();
+        t.push_back({lo, hi, -1, -1, -1});
+        if (lo == hi) return id;
+        int mid = (lo+hi)>>1;
+        int len = R - L,st = b.size();
+        t[id].st = st;
+        b.resize(st + len + 1);
+        pref.resize(st + len + 1);
+        b[st] = pref[st] = 0;
+        for (int i = 0; i < len; i++)
         {
-            for (int v : arr)
-            {
-                b.push_back(b.back() + 1);
-                pref.push_back(pref.back() + v);
-            }
-            return;
+            int x = a[L + i];
+            b[st + i + 1] = b[st + i] + (x <= mid);
+            pref[st + i + 1] =pref[st + i] + val[x];
         }
-        int mid = (lo + hi) >> 1;
-        vector<int> leftArr;
-        leftArr.reserve(n);
-        vector<int> rightArr;
-        rightArr.reserve(n);
-        for (int v : arr)
+        int leftCnt = b[st + len];
+        int lp = 0, rp = leftCnt;
+        for (int i = L; i < R; i++)
         {
-            if (v <= mid)
-            {
-                leftArr.push_back(v);
-                b.push_back(b.back() + 1);
-            }
-            else
-            {
-                rightArr.push_back(v);
-                b.push_back(b.back());
-            }
-            pref.push_back(pref.back() + v);
+            if (a[i] <= mid) tmp[lp++] = a[i];
+            else tmp[rp++] = a[i];
         }
-        if (!leftArr.empty())
-            L = new WaveletTree(leftArr, lo, mid);
-        if (!rightArr.empty())
-            R = new WaveletTree(rightArr, mid + 1, hi);
-    }
-    ~WaveletTree()
-    {
-        delete L;
-        delete R;
-    }
-    // kth smallest in [l, r], 1-based. returns -1 if invalid k.
-    int kth(int l, int r, int k) const
-    {
-        if (l > r || k <= 0 || k > r - l + 1) return -1;
-        if (lo == hi) return lo;
-        int inLeft = b[r] - b[l - 1];
-        if (k <= inLeft) return L->kth(b[l - 1] + 1, b[r], k);
-        else return R->kth(l - b[l - 1], r - b[r], k - inLeft);
-    }
-    // count of numbers <= k in [l, r]
-    int countLTE(int l, int r, int k) const
-    {
-        if (l > r || k < lo) return 0;
-        if (hi <= k) return r - l + 1;
-        int lb = b[l - 1], rb = b[r];
-        return (L ? L->countLTE(lb + 1, rb, k) : 0) + (R ? R->countLTE(l - lb, r - rb, k) : 0);
-    }
-    // count equal to value in [l, r]
-    int countEqual(int l, int r, int value) const
-    {
-        if (l > r || value < lo || value > hi) return 0;
-        if (lo == hi) return r - l + 1;
-        int mid = (lo + hi) >> 1;
-        int lb = b[l - 1], rb = b[r];
-        if (value <= mid) return L ? L->countEqual(lb + 1, rb, value) : 0;
-        else return R ? R->countEqual(l - lb, r - rb, value) : 0;
-    }
-    // sum of values < k in [l, r]
-    // Requires pref to be present (we store original prefix sums at construction)
-    ll sumLess(int l, int r, int k) const
-    {
-        if (l > r || k <= lo) return 0;
-        if (hi < k) return pref[r] - pref[l - 1];
-        int lb = b[l - 1], rb = b[r];
-        ll leftSum = L ? L->sumLess(lb + 1, rb, k) : 0;
-        ll rightSum = R ? R->sumLess(l - lb, r - rb, k) : 0;
-        return leftSum + rightSum;
+        copy(tmp.begin(), tmp.begin()+len, a.begin() + L);
+        t[id].L= build(a, tmp, L, L + leftCnt, lo, mid);
+        t[id].R = build(a, tmp, L + leftCnt, R, mid + 1, hi);
+        return id;
     }
 
-    // utility: returns total number of elements stored at this node
-    int size() const
+    void mapped(int id, int l, int r, int& lb, int& rb) 
     {
-        return (int)pref.size() - 1;
+        int st = t[id].st;
+        lb = b[st + l - 1];
+        rb = b[st + r];
+    }
+
+    ll kthRank(int id, int l, int r, int k)
+    {
+        Node& cur = t[id];
+        if (cur.lo == cur.hi) return cur.lo;
+        int lb, rb;
+        mapped(id, l, r, lb, rb);
+        int inLeft = rb - lb;
+        if (k <= inLeft) return kthRank(cur.L, lb + 1, rb, k);
+        return kthRank(cur.R, l - lb, r - rb, k - inLeft);
+    }
+
+    int countRankLess(int id, int l, int r, int q)
+    {
+        Node& cur = t[id];
+        if (l > r || cur.lo >= q) return 0;
+        if (cur.hi < q) return r - l + 1;
+        int lb, rb;
+        mapped(id, l, r, lb, rb);
+        return countRankLess(cur.L, lb + 1, rb, q)+ countRankLess(cur.R, l - lb, r - rb, q);
+    }
+
+    int countRankEqual(int id, int l, int r, int rank)
+    {
+        Node& cur = t[id];
+        if (l > r || rank < cur.lo || rank > cur.hi) return 0;
+        if (cur.lo == cur.hi) return r - l + 1;
+        int mid = cur.lo + (cur.hi - cur.lo) / 2;
+        int lb, rb;
+        mapped(id, l, r, lb, rb);
+        if (rank <= mid) return countRankEqual(cur.L, lb + 1, rb, rank);
+        return countRankEqual(cur.R, l - lb, r - rb, rank);
+    }
+
+    ll sumRankLess(int id, int l, int r, int q)
+    {
+        Node& cur = t[id];
+        if (l > r || cur.lo >= q) return 0;
+        if (cur.hi < q)
+        {
+            if (cur.lo == cur.hi) return val[cur.lo] * (r - l + 1LL);
+            int st = cur.st;
+            return pref[st + r] - pref[st + l - 1];
+        }
+        int lb, rb;
+        mapped(id, l, r, lb, rb);
+        return sumRankLess(cur.L, lb + 1, rb, q) + sumRankLess(cur.R, l - lb, r - rb, q);
+    }
+
+public:
+    WaveletTree() = default;
+
+    explicit WaveletTree(const vector<ll>& a)
+    {
+        n = a.size();
+        if (n == 0) return;
+        val=a;
+        sort(val.begin(), val.end());
+        val.erase(unique(val.begin(), val.end()), val.end());
+        D=val.size();
+        int H = 0;
+        while ((1LL << H) < D) H++;
+        size_t cap = n * H + D - 1;
+        t.reserve(2*D - 1);
+        b.reserve(cap);
+        pref.reserve(cap);
+        vector<int> work(n), tmp(n);
+        for (int i = 0; i < n; i++)
+            work[i] = lower_bound(val.begin(), val.end(), a[i]) - val.begin();
+        root = build(work, tmp, 0, n, 0, D - 1);
+    }
+
+    ll kth(int l, int r, int k)
+    {
+        if (root == -1 || l < 1 || r > n || l > r || k < 1 || k > r - l + 1) return -1;
+        return val[kthRank(root, l, r, k)];
+    }
+
+    int countLTE(int l, int r, ll x)
+    {
+        if (root == -1 || l < 1 || r > n || l > r) return 0;
+        int q = upper_bound(val.begin(), val.end(), x) - val.begin();
+        return countRankLess(root, l, r, q);
+    }
+
+    int countEqual(int l, int r, ll x)
+    {
+        if (root == -1 || l < 1 || r > n || l > r) return 0;
+        auto it = lower_bound(val.begin(), val.end(), x);
+        if (it == val.end() || *it != x) return 0;
+        int rank = it - val.begin();
+        return countRankEqual(root, l, r, rank);
+    }
+
+    ll sumLess(int l, int r, ll x)
+    {
+        if (root == -1 || l < 1 || r > n || l > r) return 0;
+        int q = lower_bound(val.begin(), val.end(), x) - val.begin();
+        return sumRankLess(root, l, r, q);
+    }
+
+    ll rangeSum(int l, int r)
+    {
+        if (root == -1 || l < 1 || r > n || l > r) return 0;
+        if (D == 1) return val[0] * (r - l + 1LL);
+        int st = t[root].st;
+        return pref[st + r] - pref[st + l - 1];
     }
 };
-signed main()
+
+int main()
 {
-    fast
-    int n;
-    cin >> n;
-    vector<int> v(n);
-    for(int i=0;i<n;i++) cin >> v[i];
-    auto tmp=v;
-    sort(tmp.begin(),tmp.end());
-    tmp.erase(unique(tmp.begin(),tmp.end()),tmp.end());
-    for(auto &it:tmp) it=lower_bound(tmp.begin(),tmp.end(),it)-tmp.begin();
-    WaveletTree wt(tmp,0,tmp.size()-1);
-    return 0;
+    
 }

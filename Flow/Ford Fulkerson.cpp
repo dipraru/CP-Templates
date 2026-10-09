@@ -1,3 +1,6 @@
+#include<bits/stdc++.h>
+using namespace std;
+const long long INF=1e12;
 // O(E*F),  where F is the maximum flow value.
 struct FordFulkerson
 {
